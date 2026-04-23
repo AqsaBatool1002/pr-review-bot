@@ -4,8 +4,7 @@
 # GitHub API client — used to fetch PR diffs and post comments
 PyGithub==2.3.0
 
-# OpenAI-compatible client — used for both Gemini and Groq API calls
-# (both providers expose an OpenAI-compatible REST interface)
+# OpenAI-compatible client — used for Groq API calls
 openai==1.30.5
 
 # Loads variables from .env file during local development

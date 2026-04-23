@@ -10,7 +10,7 @@ Every time a PR is **opened or updated**, the bot:
 
 1. Reads all changed files in the PR
 2. Extracts the git diff (the actual ±-lines)
-3. Sends the diff to **Google Gemini** (or Groq as fallback)
+3. Sends the diff to **Groq**
 4. Posts a structured review comment like this:
 
 ```
@@ -43,10 +43,9 @@ No issues found.
 |---|---|---|
 | **Python 3.11** | Runtime | Free |
 | **GitHub Actions** | CI runner that triggers the bot | Free |
-| **Google Gemini** (`gemini-2.0-flash`) | AI code reviewer (primary) | Free — 1,500 req/day |
-| **Groq** (`llama3-70b-8192`) | AI fallback | Free — 14,400 req/day |
+| **Groq** (`llama-3.3-70b-versatile`) | AI code reviewer | Free — 14,400 req/day |
 | **PyGithub** | GitHub API client | Free |
-| **openai** (Python lib) | OpenAI-compatible client for both Gemini & Groq | Free |
+| **openai** (Python lib) | OpenAI-compatible client for Groq | Free |
 | **python-dotenv** | Loads `.env` for local dev | Free |
 
 ---
@@ -71,19 +70,12 @@ pr-review-bot/
 
 ## 🚀 Setup Guide (5 minutes)
 
-### Step 1 — Get your free API keys
+### Step 1 — Get your free Groq API key
 
-#### Google Gemini (recommended — primary)
-1. Go to **https://aistudio.google.com/app/apikey**
-2. Sign in with any Google account (no credit card needed)
-3. Click **"Create API key"** → select or create a Google Cloud project
-4. Copy the key — you'll need it in Step 3
-
-#### Groq (optional — fallback)
 1. Go to **https://console.groq.com**
 2. Sign up with GitHub or Google (no credit card needed)
 3. Navigate to **API Keys → Create API Key**
-4. Copy the key
+4. Copy the key — you'll need it in Step 3
 
 ---
 
@@ -108,8 +100,7 @@ In your GitHub repository:
 
 | Secret Name | Value |
 |---|---|
-| `GEMINI_API_KEY` | Your Gemini API key from Step 1 |
-| `GROQ_API_KEY` | Your Groq API key (optional) |
+| `GROQ_API_KEY` | Your Groq API key from Step 1 |
 
 > ⚠️ `GITHUB_TOKEN` is **automatically provided** by GitHub Actions — you do NOT need to add it manually.
 
@@ -146,8 +137,7 @@ python scripts/review_pr.py
 
 Your `.env` should look like this for local testing:
 ```env
-GEMINI_API_KEY=AIzaSy...
-GROQ_API_KEY=gsk_...            # optional
+GROQ_API_KEY=gsk_...
 GITHUB_TOKEN=ghp_...
 GITHUB_REPOSITORY=alice/my-repo
 GITHUB_PR_NUMBER=5
@@ -174,10 +164,10 @@ permissions:
 
 ---
 
-### Error 2 — `GEMINI_API_KEY` not found / `AuthenticationError`
+### Error 2 — `GROQ_API_KEY` not found / `AuthenticationError`
 
 ```
-[PR Review Bot] ❌ Missing required environment variable: GEMINI_API_KEY
+[PR Review Bot] ❌ Missing required environment variable: GROQ_API_KEY
 # or
 openai.AuthenticationError: 401 Incorrect API key provided
 ```
@@ -186,7 +176,7 @@ openai.AuthenticationError: 401 Incorrect API key provided
 
 **Fix:**
 1. Go to **GitHub repo → Settings → Secrets → Actions**
-2. Verify the secret is named **exactly** `GEMINI_API_KEY` (case-sensitive)
+2. Verify the secret is named **exactly** `GROQ_API_KEY` (case-sensitive)
 3. Re-run the failed workflow from the Actions tab
 
 ---
@@ -213,8 +203,7 @@ You can tune the bot's behaviour by editing these values in `scripts/review_pr.p
 | Variable | Default | Description |
 |---|---|---|
 | `MAX_DIFF_CHARS` | `6000` | Max characters of diff sent to AI (increase if you have a large context model) |
-| `GEMINI_MODEL` | `gemini-2.0-flash` | Gemini model to use |
-| `GROQ_MODEL` | `llama3-70b-8192` | Groq fallback model |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Groq model to use |
 
 And in `scripts/prompts.py` you can freely edit `SYSTEM_PROMPT` to change the review style, add/remove sections, or make the tone stricter/friendlier.
 
@@ -224,10 +213,9 @@ And in `scripts/prompts.py` you can freely edit `SYSTEM_PROMPT` to change the re
 
 | Provider | Daily Limit | Per-Minute Limit | Context Window |
 |---|---|---|---|
-| Google Gemini Flash | 1,500 requests | 15 RPM | 1,000,000 tokens |
-| Groq (llama3-70b) | 14,400 requests | 30 RPM | 8,192 tokens |
+| Groq (llama-3.3-70b) | 14,400 requests | 30 RPM | 8,192 tokens |
 
-For most projects, Gemini's free tier is more than enough. A typical PR review uses 1 request.
+For most projects, Groq's free tier is more than enough. A typical PR review uses 1 request.
 
 ---
 
@@ -236,7 +224,7 @@ For most projects, Gemini's free tier is more than enough. A typical PR review u
 - **Never commit your `.env` file** — it's in `.gitignore`
 - `GITHUB_TOKEN` is scoped to the current repo and expires after each workflow run
 - The bot only **reads** PR diffs and **writes** comments — it cannot push code or modify branches
-- Your diff is sent to Google/Groq servers — don't use this on repos with highly sensitive IP until you review their data policies
+- Your diff is sent to Groq servers — don't use this on repos with highly sensitive IP until you review their data policies
 
 ---
 
