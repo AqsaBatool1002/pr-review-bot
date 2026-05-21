@@ -129,30 +129,31 @@ print(f"[PR Review Bot] 📄  Diff collected — {len(diff)} characters across c
 
 def call_gemini(api_key: str, diff_text: str) -> str:
     """
-    Call Google Gemini via the openai-compatible endpoint.
+    Call Google Gemini via the official Google Generative AI library.
     Gemini Flash is free up to 1,500 requests/day with a 1M-token context.
-    Endpoint: https://generativelanguage.googleapis.com/v1beta/openai/
     """
-    from openai import OpenAI
+    import google.generativeai as genai
 
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    genai.configure(api_key=api_key)
+    
+    # We pass the SYSTEM_PROMPT directly to the model configuration
+    model = genai.GenerativeModel(
+        model_name=GEMINI_MODEL,
+        system_instruction=SYSTEM_PROMPT
     )
 
     prompt = build_review_prompt(diff_text)
 
-    response = client.chat.completions.create(
-        model=GEMINI_MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": prompt},
-        ],
-        temperature=0.2,          # low temp = more focused, reproducible reviews
-        max_tokens=1500,
+    # Generate the review
+    response = model.generate_content(
+        prompt,
+        generation_config=genai.types.GenerationConfig(
+            temperature=0.2,
+            max_output_tokens=1500,
+        )
     )
 
-    return response.choices[0].message.content.strip()
+    return response.text.strip()
 
 
 def call_groq(api_key: str, diff_text: str) -> str:
