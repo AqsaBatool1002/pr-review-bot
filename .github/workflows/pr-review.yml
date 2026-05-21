@@ -1,0 +1,58 @@
+name: PR Review Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write   # needed to post comments on the PR
+  contents: read         # needed to checkout the repo
+
+jobs:
+  review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout the repository ──────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so we can read all changed files
+
+      # ── 2. Set up Python 3.11 ───────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 3. Cache pip dependencies ────────────────────────────────────────────
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # ── 4. Install dependencies ──────────────────────────────────────────────
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── 5. Run the AI review script ──────────────────────────────────────────
+      - name: Run PR Review Bot
+        env:
+          # Your AI provider API key — set this in:
+          # GitHub → Settings → Secrets and variables → Actions → New repository secret
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}          # optional: Groq fallback
+
+          # GitHub token is automatically provided by Actions — no setup needed
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # PR number is injected automatically by the pull_request event
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+
+          # Repo in "owner/repo" format — provided automatically
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/review_pr.py

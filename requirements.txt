@@ -1,0 +1,13 @@
+# PR Review Bot — Python dependencies
+# Install with: pip install -r requirements.txt
+
+# GitHub API client — used to fetch PR diffs and post comments
+PyGithub==2.3.0
+
+# OpenAI-compatible client — used for both Gemini and Groq API calls
+# (both providers expose an OpenAI-compatible REST interface)
+openai==1.30.5
+
+# Loads variables from .env file during local development
+# Has no effect in GitHub Actions (env vars are injected by the workflow)
+python-dotenv==1.0.1
