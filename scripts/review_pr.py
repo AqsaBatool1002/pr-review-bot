@@ -6,15 +6,13 @@ Triggered by GitHub Actions on every new or updated pull request.
 Flow:
   1. Authenticate with GitHub via GITHUB_TOKEN
   2. Fetch the PR and its file diffs
-  3. Send the diff to an AI (Gemini primary, Groq fallback)
   4. Post the structured review as a PR comment
 
 Environment variables (injected by GitHub Actions):
   GITHUB_TOKEN       — auto-provided by Actions, no setup needed
   GITHUB_REPOSITORY  — "owner/repo", auto-provided by Actions
   GITHUB_PR_NUMBER   — PR number, injected from the workflow
-  GEMINI_API_KEY     — your Google Gemini API key (free tier)
-  GROQ_API_KEY       — optional Groq API key (fallback)
+  GROQ_API_KEY       — your Groq API key
 """
 
 import os
@@ -31,8 +29,7 @@ load_dotenv()
 
 # ── Config ───────────────────────────────────────────────────────────────────
 MAX_DIFF_CHARS = 6000      # keep well within LLM token limits
-GEMINI_MODEL   = "gemini-2.0-flash"   # free, fast, 1M context window
-GROQ_MODEL     = "llama3-70b-8192"    # Groq fallback
+GROQ_MODEL     = "llama3-70b-8192"    # Primary Groq model
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,8 +48,7 @@ def get_env(name: str, required: bool = True) -> str:
 github_token    = get_env("GITHUB_TOKEN")
 repo_name       = get_env("GITHUB_REPOSITORY")   # e.g. "alice/my-repo"
 pr_number_str   = get_env("GITHUB_PR_NUMBER")
-gemini_api_key  = get_env("GEMINI_API_KEY", required=False)
-groq_api_key    = get_env("GROQ_API_KEY",   required=False)
+groq_api_key    = get_env("GROQ_API_KEY")
 
 if not pr_number_str.isdigit():
     print(f"[PR Review Bot] ❌  GITHUB_PR_NUMBER is not a valid integer: '{pr_number_str}'")
@@ -124,48 +120,22 @@ print(f"[PR Review Bot] 📄  Diff collected — {len(diff)} characters across c
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. Call the AI — Gemini primary, Groq fallback
+# 4. Call the AI — Groq
 # ─────────────────────────────────────────────────────────────────────────────
-
-def call_gemini(api_key: str, diff_text: str) -> str:
-    """
-    Call Google Gemini via the official Google Generative AI library.
-    Gemini Flash is free up to 1,500 requests/day with a 1M-token context.
-    """
-    import google.generativeai as genai
-
-    genai.configure(api_key=api_key)
-    
-    # We pass the SYSTEM_PROMPT directly to the model configuration
-    model = genai.GenerativeModel(
-        model_name=GEMINI_MODEL,
-        system_instruction=SYSTEM_PROMPT
-    )
-
-    prompt = build_review_prompt(diff_text)
-
-    # Generate the review
-    response = model.generate_content(
-        prompt,
-        generation_config=genai.types.GenerationConfig(
-            temperature=0.2,
-            max_output_tokens=1500,
-        )
-    )
-
-    return response.text.strip()
-
 
 def call_groq(api_key: str, diff_text: str) -> str:
     """
     Call Groq via its OpenAI-compatible endpoint.
     llama3-70b-8192: 14,400 requests/day on the free tier.
     """
+    import httpx
     from openai import OpenAI
 
+    # We use a custom httpx client to avoid the 'proxies' bug on some systems
     client = OpenAI(
         api_key=api_key,
         base_url="https://api.groq.com/openai/v1",
+        http_client=httpx.Client()
     )
 
     prompt = build_review_prompt(diff_text)
@@ -185,24 +155,12 @@ def call_groq(api_key: str, diff_text: str) -> str:
 
 review_text = ""
 
-if gemini_api_key:
-    try:
-        print("[PR Review Bot] 🤖  Calling Gemini API (gemini-2.0-flash) …")
-        review_text = call_gemini(gemini_api_key, diff)
-        print("[PR Review Bot] ✅  Gemini review received")
-    except Exception as exc:
-        print(f"[PR Review Bot] ⚠️   Gemini call failed ({exc}), trying Groq …")
-
-if not review_text and groq_api_key:
-    try:
-        print("[PR Review Bot] 🤖  Calling Groq API (llama3-70b-8192) …")
-        review_text = call_groq(groq_api_key, diff)
-        print("[PR Review Bot] ✅  Groq review received")
-    except Exception as exc:
-        print(f"[PR Review Bot] ❌  Groq call also failed: {exc}")
-
-if not review_text:
-    print("[PR Review Bot] ❌  No AI response received. Check your API keys.")
+try:
+    print(f"[PR Review Bot] 🤖  Calling Groq API ({GROQ_MODEL}) …")
+    review_text = call_groq(groq_api_key, diff)
+    print("[PR Review Bot] ✅  Groq review received")
+except Exception as exc:
+    print(f"[PR Review Bot] ❌  Groq call failed: {exc}")
     sys.exit(1)
 
 
@@ -212,7 +170,7 @@ if not review_text:
 
 COMMENT_HEADER = (
     "## 🤖 AI Code Review\n\n"
-    "> *Automated review powered by Google Gemini · "
+    "> *Automated review powered by Groq · "
     "[PR Review Bot](https://github.com/marketplace)*\n\n"
     "---\n\n"
 )

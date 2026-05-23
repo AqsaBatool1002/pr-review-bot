@@ -44,8 +44,7 @@ jobs:
         env:
           # Your AI provider API key — set this in:
           # GitHub → Settings → Secrets and variables → Actions → New repository secret
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}          # optional: Groq fallback
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
           # GitHub token is automatically provided by Actions — no setup needed
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
