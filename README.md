@@ -43,7 +43,7 @@ No issues found.
 |---|---|---|
 | **Python 3.11** | Runtime | Free |
 | **GitHub Actions** | CI runner that triggers the bot | Free |
-| **Groq** (`llama3-70b-8192`) | AI code reviewer | Free — 14,400 req/day |
+| **Groq** (`llama-3.3-70b-versatile`) | AI code reviewer | Free — 14,400 req/day |
 | **PyGithub** | GitHub API client | Free |
 | **openai** (Python lib) | OpenAI-compatible client for Groq | Free |
 | **python-dotenv** | Loads `.env` for local dev | Free |
@@ -203,7 +203,7 @@ You can tune the bot's behaviour by editing these values in `scripts/review_pr.p
 | Variable | Default | Description |
 |---|---|---|
 | `MAX_DIFF_CHARS` | `6000` | Max characters of diff sent to AI (increase if you have a large context model) |
-| `GROQ_MODEL` | `llama3-70b-8192` | Groq model to use |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Groq model to use |
 
 And in `scripts/prompts.py` you can freely edit `SYSTEM_PROMPT` to change the review style, add/remove sections, or make the tone stricter/friendlier.
 
@@ -213,7 +213,7 @@ And in `scripts/prompts.py` you can freely edit `SYSTEM_PROMPT` to change the re
 
 | Provider | Daily Limit | Per-Minute Limit | Context Window |
 |---|---|---|---|
-| Groq (llama3-70b) | 14,400 requests | 30 RPM | 8,192 tokens |
+| Groq (llama-3.3-70b) | 14,400 requests | 30 RPM | 8,192 tokens |
 
 For most projects, Groq's free tier is more than enough. A typical PR review uses 1 request.
 

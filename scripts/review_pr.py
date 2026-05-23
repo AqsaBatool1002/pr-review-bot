@@ -29,7 +29,7 @@ load_dotenv()
 
 # ── Config ───────────────────────────────────────────────────────────────────
 MAX_DIFF_CHARS = 6000      # keep well within LLM token limits
-GROQ_MODEL     = "llama3-70b-8192"    # Primary Groq model
+GROQ_MODEL     = "llama-3.3-70b-versatile"    # Primary Groq model
 
 
 # ─────────────────────────────────────────────────────────────────────────────
